@@ -1,69 +1,80 @@
 import { useState, useEffect } from 'react';
-
+import { useNavigate } from 'react-router-dom';
 import api from '../../api';
-
-import { Link } from 'react-router-dom';
+import { Modal, Button } from 'react-bootstrap';
 
 export default function SurahIndex() {
-
     const [surahs, setSurahs] = useState([]);
+    const [showModal, setShowModal] = useState(false);
+    const [selectedSurah, setSelectedSurah] = useState(null);
+    const navigate = useNavigate();
 
     const fetchDataSurahs = async () => {
-
         await api.get('/api/surah')
             .then(response => {
                 setSurahs(response.data);
             })
-
     }
 
     useEffect(() => {
-
         fetchDataSurahs();
-
     }, []);
+
+    const handleShow = (surah) => {
+        setSelectedSurah(surah);
+        setShowModal(true);
+    }
+
+    const handleClose = () => setShowModal(false);
+
+    const handleCardClick = (nomor) => {
+        navigate(`/surah/${nomor}`);
+    }
 
     return (
         <div className="container mt-5 mb-5">
+            <h1 className="text-center mb-4">Qur'an</h1>
             <div className="row">
-                <div className="col-md-12">
-                    <h1 style={{textAlign: "center"}}>DAFTAR SURAH AL-QURAN</h1>
-                    <div className="card border-0 rounded shadow">
-                        <div className="card-body">
-                            <table className="table table-bordered">
-                                <thead className="bg-dark text-white">
-                                    <tr>
-                                        <th scope="col">Nomor</th>
-                                        <th scope="col">Nama</th>
-                                        <th scope="col">Nama Latin</th>
-                                        <th scope="col">Jumlah Ayat</th>
-                                        <th scope="col">Tempat Turun</th>
-                                        <th scope="col">Arti</th>
-                                        <th scope="col" style={{ 'width': '15%' }}>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {
-                                        surahs.map((surah, index) => (
-                                            <tr key={index}>
-                                                <td>{surah.nomor}</td>
-                                                <td>{surah.nama}</td>
-                                                <td>{surah.nama_latin}</td>
-                                                <td>{surah.jumlah_ayat}</td>
-                                                <td>{surah.tempat_turun}</td>
-                                                <td>{surah.arti}</td>
-                                                <td className="text-center">
-                                                    <Link to={`/surahs/${surah.nomor}`} className="btn btn-sm btn-primary rounded-sm shadow border-0 me-2">Detail</Link>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    }
-                                </tbody>
-                            </table>
+                {surahs.map((surah, index) => (
+                    <div key={index} className="col-md-6 mb-4">
+                        <div 
+                            className="d-flex align-items-center bg-light p-3 rounded shadow-sm cursor-pointer"
+                            onClick={() => handleCardClick(surah.nomor)}
+                            style={{ cursor: 'pointer' }}
+                        >
+                            <div className="me-3 text-white bg-danger p-2 rounded" style={{ width: '40px', textAlign: 'center' }}>
+                                <strong>{surah.nomor}</strong>
+                            </div>
+                            <div className="flex-grow-1">
+                                <h5 className="m-0 text-danger">{surah.nama_latin}</h5>
+                                <small>{surah.arti}</small>
+                                <p className="m-0 text-muted">{surah.jumlah_ayat} ayat, surah {surah.tempat_turun}</p>
+                            </div>
+                            <button className="btn btn-light" onClick={(e) => { e.stopPropagation(); handleShow(surah); }}>
+                                <i className="bi bi-info-circle"></i>
+                            </button>
                         </div>
                     </div>
-                </div>
+                ))}
             </div>
+
+            {/* Modal */}
+            {selectedSurah && (
+                <Modal show={showModal} onHide={handleClose} centered>
+                    <Modal.Header closeButton>
+                        <Modal.Title>{selectedSurah.nama_latin}</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <p><strong>Arti:</strong> {selectedSurah.arti}</p>
+                        <p><strong>Jumlah Ayat:</strong> {selectedSurah.jumlah_ayat}</p>
+                        <p><strong>Tempat Turun:</strong> {selectedSurah.tempat_turun}</p>
+                        <p><strong>Deskripsi:</strong> {selectedSurah.deskripsi || 'Deskripsi tidak tersedia'}</p>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={handleClose}>Tutup</Button>
+                    </Modal.Footer>
+                </Modal>
+            )}
         </div>
-    )
+    );
 }
